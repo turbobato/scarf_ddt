@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <omp.h>
+#include <time.h>
 
 #define ROUNDS 8
 #define INPUT_SP (1<<N)
@@ -14,7 +15,7 @@
 // for computing the ddt
 #define NB_SAMPLE_DDT (1<<15)
 // for computing the ddt on 5bit differentials
-#define NB_SAMPLE_5bit_DDT (1<<20)
+#define NB_SAMPLE_5bit_DDT (1<<8)
 // for testing a fixed differential
 #define NB_SAMPLE_TEST (1<<20)
 #define tenb_MASK 0b1111111111
@@ -30,6 +31,8 @@ float * DDT(int rounds);
 float test_differential(int alpha, int beta, int rounds);
 
 void sample_ddt(int mode);
+
+uint64_t getRandom_(void);
 
 uint64_t getRandom(void);
 
@@ -58,14 +61,23 @@ float getmax(float * ddt, int * alpha_m, int * beta_m, int size){
     return max;
 }
 
-// returns a pseudo random 60bits value (4 upper bits set to 0)
 uint64_t getRandom(void){
     uint64_t x, y;
-    x = arc4random();
-    y = arc4random();
-    uint64_t ret = ((x<<32)+y);
+    x = rand();
+    y = rand();
+    uint64_t ret = ((x<<30)+y);
     return ret&sixtyb_MASK;
 }
+
+
+// returns a pseudo random 60bits value (4 upper bits set to 0) using arc4random
+// uint64_t getRandom_(void){
+//     uint64_t x, y;
+//     x = arc4random();
+//     y = arc4random();
+//     uint64_t ret = ((x<<32)+y);
+//     return ret&sixtyb_MASK;
+// }
 
 float * DDT(int rounds){
     float * ddt = malloc(sizeof(float)*INPUT_SP*INPUT_SP);
@@ -186,7 +198,7 @@ void sample_ddt(int mode){
             fp2 = fopen("avg_ddt_result_5bits.txt", "w+");
 
             #pragma omp parallel for ordered
-            for (int r = 1; r < 9; r++){
+            for (int r = 2; r < 9; r++){
                 int alpha_m = 0, beta_m = 0;
                 float * ddt = fivebitDDT(r);
                 float max = getmax(ddt, &alpha_m, &beta_m, HALF_INPUT_SP);
@@ -208,6 +220,7 @@ void sample_ddt(int mode){
 }
 
 int main(){
+    srand ( time(NULL) );
     sample_ddt(1);
     return 0;
 }
