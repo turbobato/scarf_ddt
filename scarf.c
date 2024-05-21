@@ -22,13 +22,13 @@
 #define sixtyb_MASK 0xFFFFFFFFFFFFFFF
 
 
-const float prob = 1/((1<<N)-1.0);
+const double prob = 1/((1<<N)-1.0);
 
 double log2(double arg);
 
-float * DDT(int rounds);
+double * DDT(int rounds);
 
-float test_differential(int alpha, int beta, int rounds);
+double test_differential(int alpha, int beta, int rounds);
 
 void sample_ddt(int mode);
 
@@ -36,19 +36,19 @@ uint64_t getRandom_(void);
 
 uint64_t getRandom(void);
 
-float getmax(float * ddt, int * alpha, int * beta, int size);
+double getmax(double * ddt, int * alpha, int * beta, int size);
 
-void write_ddt_to_files(FILE * fp, float* ddt, int size);
+void write_ddt_to_files(FILE * fp, double* ddt, int size);
 
-float * fivebitDDT(int rounds);
+double * fivebitDDT(int rounds);
 
 double log2(double arg){
     return log(arg)/log(2);
 }
 
 //get best differential in the ddt, puts the differential in alpha_m and beta_m
-float getmax(float * ddt, int * alpha_m, int * beta_m, int size){
-    float max = 0.0; 
+double getmax(double * ddt, int * alpha_m, int * beta_m, int size){
+    double max = 0.0; 
     for (int alpha = 1; alpha < size; alpha ++){
         for (int beta = 1; beta < size; beta++){
             if (max < ddt[alpha+(size*beta)]){
@@ -79,8 +79,8 @@ uint64_t getRandom(void){
 //     return ret&sixtyb_MASK;
 // }
 
-float * DDT(int rounds){
-    float * ddt = malloc(sizeof(float)*INPUT_SP*INPUT_SP);
+double * DDT(int rounds){
+    double * ddt = malloc(sizeof(double)*INPUT_SP*INPUT_SP);
    
     for (int c = 0; c < NB_SAMPLE_DDT; c++){
         uint64_t k3, k2, k1, k0, t1, t2;
@@ -107,7 +107,7 @@ float * DDT(int rounds){
     return ddt;
 }
 
-void write_ddt_to_file(FILE * fp, float* ddt, int size){
+void write_ddt_to_file(FILE * fp, double* ddt, int size){
     for (int alpha = 0; alpha < size; alpha++){
         for (int beta = 0; beta < size; beta++){
             fprintf(fp, "%f ", ddt[alpha + (size*beta)]);
@@ -116,8 +116,8 @@ void write_ddt_to_file(FILE * fp, float* ddt, int size){
     }
 }
 
-float * fivebitDDT(int rounds){
-    float * ddt = malloc(sizeof(float)*HALF_INPUT_SP*HALF_INPUT_SP);
+double * fivebitDDT(int rounds){
+    double * ddt = malloc(sizeof(double)*HALF_INPUT_SP*HALF_INPUT_SP);
     for (int c = 0; c < NB_SAMPLE_5bit_DDT; c++){
         uint64_t k3, k2, k1, k0, t1, t2;
         k3 = getRandom(), k2 = getRandom(), k1 = getRandom(), k0 = getRandom(), 
@@ -144,7 +144,7 @@ float * fivebitDDT(int rounds){
     return ddt;
 }
 
-float test_differential(int alpha, int beta, int rounds){
+double test_differential(int alpha, int beta, int rounds){
     int counter = 0;
     for (int c = 0; c < NB_SAMPLE_TEST; c++){
         uint64_t k3, k2, k1, k0, t1, t2;
@@ -161,7 +161,7 @@ float test_differential(int alpha, int beta, int rounds){
             } 
         }
     }
-    return ((float)counter)/(NB_SAMPLE_TEST*INPUT_SP);
+    return ((double)counter)/(NB_SAMPLE_TEST*INPUT_SP);
 }
 
 // if mode = 0 then we do full ddt
@@ -177,15 +177,15 @@ void sample_ddt(int mode){
             #pragma omp parallel for ordered
             for (int r = 2; r < 9; r++){
                 int alpha_m = 0, beta_m = 0;
-                float * ddt = DDT(r);
-                float max = getmax(ddt, &alpha_m, &beta_m, INPUT_SP);
-                float bias = max - prob;
+                double * ddt = DDT(r);
+                double max = getmax(ddt, &alpha_m, &beta_m, INPUT_SP);
+                double bias = max - prob;
                 double logbias = -log2(bias);
                 #pragma omp ordered
                 {
                 fprintf(fp2, "rounds : %d\n", r);
-                printf("nb rounds : %d, logbias = %f, alpha = %b, beta = %b \n", r, logbias, alpha_m, beta_m);
-                fprintf(fp1, "nb rounds : %d, logbias = %f, alpha = %b, beta = %b \n", r, logbias, alpha_m, beta_m);
+                printf("nb rounds : %d, logbias = %f, alpha = %x, beta = %x \n", r, logbias, alpha_m, beta_m);
+                fprintf(fp1, "nb rounds : %d, logbias = %f, alpha = %x, beta = %x \n", r, logbias, alpha_m, beta_m);
                 write_ddt_to_file(fp2,ddt, INPUT_SP);
                 }
                 
@@ -200,15 +200,15 @@ void sample_ddt(int mode){
             #pragma omp parallel for ordered
             for (int r = 2; r < 9; r++){
                 int alpha_m = 0, beta_m = 0;
-                float * ddt = fivebitDDT(r);
-                float max = getmax(ddt, &alpha_m, &beta_m, HALF_INPUT_SP);
-                float bias = max - prob;
+                double * ddt = fivebitDDT(r);
+                double max = getmax(ddt, &alpha_m, &beta_m, HALF_INPUT_SP);
+                double bias = max - prob;
                 double logbias = -log2(bias);
                 #pragma omp ordered
                 {
                 fprintf(fp2, "rounds : %d\n", r);
-                printf("nb rounds : %d, logbias = %f, alpha = %b, beta = %b \n", r, logbias, alpha_m, beta_m);
-                fprintf(fp1, "nb rounds : %d, logbias = %f, alpha = %b, beta = %b \n", r, logbias, alpha_m, beta_m);
+                printf("nb rounds : %d, logbias = %f, alpha = %x, beta = %x \n", r, logbias, alpha_m, beta_m);
+                fprintf(fp1, "nb rounds : %d, logbias = %f, alpha = %x, beta = %x \n", r, logbias, alpha_m, beta_m);
                 write_ddt_to_file(fp2,ddt, HALF_INPUT_SP);
                 }
 
