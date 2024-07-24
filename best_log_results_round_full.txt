@@ -1,0 +1,1 @@
+logbias = 0.001411, alpha = 1, beta = 20 

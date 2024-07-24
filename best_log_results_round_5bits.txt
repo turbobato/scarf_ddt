@@ -1,0 +1,2 @@
+logbias = 9.943364, alpha = 7, beta = 7 
+ 
